@@ -98,7 +98,8 @@ function App() {
   return (
     <div className={`app-container ${isResizing ? 'is-resizing' : ''}`}>
       <header className="app-header">
-        <h1>LST Performance Plots</h1>
+        <img src="/logo.png" alt="LST logo" className="app-logo" />
+        <h1>LST Performance Web</h1>
       </header>
       <main className="app-body">
         <div style={{ width: sidebarWidth, display: 'flex' }}>
