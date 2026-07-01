@@ -98,7 +98,7 @@ function App() {
   return (
     <div className={`app-container ${isResizing ? 'is-resizing' : ''}`}>
       <header className="app-header">
-        <img src="/logo.png" alt="LST logo" className="app-logo" />
+        <img src={`${import.meta.env.BASE_URL}logo.png`} alt="LST logo" className="app-logo" />
         <h1>LST Performance Web</h1>
       </header>
       <main className="app-body">
