@@ -22,9 +22,14 @@ export async function fetchDirectories(repoName: string): Promise<GitHubContent[
     .reverse();
 }
 
-export async function fetchTarball(repoName: string, dirPath: string, branch: string = 'main'): Promise<ArrayBuffer> {
+export async function fetchTarball(
+  repoName: string,
+  dirPath: string,
+  branch: string = 'main',
+  signal?: AbortSignal,
+): Promise<ArrayBuffer> {
   const url = `${RAW_URL}/${repoName}/${branch}/${dirPath}/plots.tar.gz`;
-  const response = await fetch(url);
+  const response = await fetch(url, { signal });
   if (!response.ok) {
     throw new Error(`Failed to fetch tarball from ${repoName} (${branch}): ${response.statusText}`);
   }

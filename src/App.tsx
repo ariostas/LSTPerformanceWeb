@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Sidebar from './components/Sidebar';
 import PlotViewer from './components/PlotViewer';
 import { fetchDirectories, fetchTarball } from './api';
@@ -21,6 +21,7 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [sidebarWidth, setSidebarWidth] = useState(300);
   const [isResizing, setIsResizing] = useState(false);
+  const fetchAbortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     async function initApp() {
@@ -69,6 +70,10 @@ function App() {
   }, [isResizing]);
 
   const handleDirSelect = async (dir: GitHubContent) => {
+    fetchAbortRef.current?.abort();
+    const controller = new AbortController();
+    fetchAbortRef.current = controller;
+
     setSelectedDir(prev => {
       if (prev?.path === dir.path && prev?.repo === dir.repo) return prev;
       return dir;
@@ -84,14 +89,16 @@ function App() {
 
     try {
       const repoInfo = REPOS.find(r => r.name === dir.repo);
-      const buffer = await fetchTarball(dir.repo, dir.path, repoInfo?.branch ?? 'main');
+      const buffer = await fetchTarball(dir.repo, dir.path, repoInfo?.branch ?? 'main', controller.signal);
       const files = await decompressTarGz(buffer);
       setPlotFiles(files);
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return;
       setError(`Failed to process plots for ${dir.name}.`);
       console.error(err);
     } finally {
-      setIsExtracting(false);
+      // Only reset state if this request is still the current one
+      if (fetchAbortRef.current === controller) setIsExtracting(false);
     }
   };
 
