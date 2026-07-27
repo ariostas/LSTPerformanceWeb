@@ -169,6 +169,21 @@ body, html, #root {
 }
 
 .run-item.selected .repo-tag {
+  background-color: #444;
+  color: white;
+}
+
+.run-timestamp {
+  font-size: 0.65rem;
+  background-color: #e8f4fd;
+  color: #0969da;
+  padding: 1px 5px;
+  border-radius: 8px;
+  font-weight: normal;
+  flex-shrink: 0;
+}
+
+.run-item.selected .run-timestamp {
   background-color: var(--accent-color);
   color: white;
 }

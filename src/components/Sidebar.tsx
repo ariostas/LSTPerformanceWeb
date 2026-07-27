@@ -21,6 +21,36 @@ function getHardwareTag(dirName: string): 'GPU' | 'CPU' | null {
   return null;
 }
 
+const TIMESTAMP_RE = /^\d{12}$/;
+
+function extractTimestamp(dirName: string): { timestamp: string | null; rest: string } {
+  const parts = dirName.split('_');
+  if (parts.length >= 3 && TIMESTAMP_RE.test(parts[2])) {
+    return { timestamp: parts[2], rest: parts.slice(3).join('_') || 'default' };
+  }
+  return { timestamp: null, rest: parts.slice(2).join('_') || 'default' };
+}
+
+function getLatestTimestamp(commitNode: RunTreeNode): string | null {
+  const timestamps = Object.values(commitNode.children)
+    .map(child => extractTimestamp(child.dir?.name ?? '').timestamp)
+    .filter((ts): ts is string => ts !== null);
+  return timestamps.length > 0 ? [...timestamps].sort().at(-1) ?? null : null;
+}
+
+function formatTimestamp(ts: string): string {
+  const date = new Date(
+    parseInt(ts.slice(0, 4)),
+    parseInt(ts.slice(4, 6)) - 1,
+    parseInt(ts.slice(6, 8)),
+    parseInt(ts.slice(8, 10)),
+    parseInt(ts.slice(10, 12)),
+  );
+  return date.toLocaleString('en-US', {
+    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false,
+  });
+}
+
 const RunTreeItem: React.FC<{
   node: RunTreeNode;
   level: number;
@@ -69,6 +99,9 @@ const RunTreeItem: React.FC<{
   }
 
   if (node.type === 'run') {
+    const dirName = node.dir?.name ?? '';
+    const hwTag = getHardwareTag(dirName);
+    const { timestamp } = extractTimestamp(dirName);
     return (
       <li
         className={`run-item ${selectedDir === node.dir?.path ? 'selected' : ''}`}
@@ -79,18 +112,32 @@ const RunTreeItem: React.FC<{
         <div className="run-item-content">
           <span className="icon">🚀</span>
           <span className="run-name">{node.name.replace(/_(gpu|cpu)$/, '')}</span>
-          {getHardwareTag(node.dir?.name ?? '') && (
-            <span className={`hw-tag hw-tag--${getHardwareTag(node.dir?.name ?? '')!.toLowerCase()}`}>
-              {getHardwareTag(node.dir?.name ?? '')}
-            </span>
-          )}
+          {hwTag && <span className={`hw-tag hw-tag--${hwTag.toLowerCase()}`}>{hwTag}</span>}
+          {timestamp && <span className="run-timestamp">{formatTimestamp(timestamp)}</span>}
           <span className="repo-tag">{node.dir?.repo.includes('2026') ? '2026' : 'Legacy'}</span>
         </div>
       </li>
     );
   }
 
-  const children = Object.values(node.children).sort((a, b) => a.name.localeCompare(b.name));
+  const children = Object.values(node.children).sort((a, b) => {
+    // Sort commits by latest run timestamp desc; no-timestamp commits at bottom alphabetically
+    if (a.type === 'commit' && b.type === 'commit') {
+      const tsA = getLatestTimestamp(a);
+      const tsB = getLatestTimestamp(b);
+      if (tsA && tsB) return tsB.localeCompare(tsA);
+      if (tsA) return -1;
+      if (tsB) return 1;
+      return a.name.localeCompare(b.name);
+    }
+    // Sort runs by timestamp descending (newest first) when available
+    if (a.type === 'run' && b.type === 'run') {
+      const tsA = extractTimestamp(a.dir?.name ?? '').timestamp ?? '';
+      const tsB = extractTimestamp(b.dir?.name ?? '').timestamp ?? '';
+      if (tsA && tsB) return tsB.localeCompare(tsA);
+    }
+    return a.name.localeCompare(b.name);
+  });
   if (children.length === 0) return null;
 
   return (
@@ -132,7 +179,7 @@ const Sidebar: React.FC<SidebarProps> = ({ directories, selectedDir, onSelect, i
       const parts = dir.name.split('_');
       const prName = parts[0] || 'Unknown';
       const commitHash = parts[1] || 'NoHash';
-      const rest = parts.slice(2).join('_') || 'default';
+      const { rest } = extractTimestamp(dir.name);
 
       if (!root.children[prName]) {
         root.children[prName] = { name: prName, type: 'pr', children: {} };
@@ -142,7 +189,8 @@ const Sidebar: React.FC<SidebarProps> = ({ directories, selectedDir, onSelect, i
         prNode.children[commitHash] = { name: commitHash, type: 'commit', children: {} };
       }
       const commitNode = prNode.children[commitHash];
-      commitNode.children[rest] = { name: rest, type: 'run', children: {}, dir };
+      // Use dir.name as key so entries with different timestamps stay distinct
+      commitNode.children[dir.name] = { name: rest, type: 'run', children: {}, dir };
     });
     return root;
   }, [directories, searchTerm]);
