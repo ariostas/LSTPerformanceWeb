@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import type { GitHubContent } from '../api';
 
 interface SidebarProps {
@@ -57,13 +57,16 @@ const RunTreeItem: React.FC<{
   selectedDir: string | null;
   onSelect: (dir: GitHubContent) => void;
   searchTerm: string;
-}> = ({ node, level, selectedDir, onSelect, searchTerm }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  parentOpen?: boolean;
+}> = ({ node, level, selectedDir, onSelect, searchTerm, parentOpen = false }) => {
+  const [override, setOverride] = useState<boolean | null>(null);
+  const [prevParentOpen, setPrevParentOpen] = useState(parentOpen);
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (searchTerm) setIsOpen(true);
-  }, [searchTerm]);
+  // Reset user override when parent transitions closed → open, so commits auto-open again
+  if (prevParentOpen !== parentOpen) {
+    setPrevParentOpen(parentOpen);
+    if (parentOpen) setOverride(null);
+  }
 
   const hasSelectedChild = useMemo(() => {
     const check = (n: RunTreeNode): boolean => {
@@ -73,10 +76,8 @@ const RunTreeItem: React.FC<{
     return check(node);
   }, [node, selectedDir]);
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (hasSelectedChild) setIsOpen(true);
-  }, [hasSelectedChild]);
+  const isOpen = hasSelectedChild ||
+    (override !== null ? override : (parentOpen || !!searchTerm));
 
   if (node.name === 'root') {
     const children = Object.values(node.children).sort((a, b) => {
@@ -146,7 +147,7 @@ const RunTreeItem: React.FC<{
     <>
       <li
         className="dir-item"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => setOverride(!isOpen)}
         style={{ paddingLeft: `${level * 12 + 15}px` }}
       >
         <span className="icon">{isOpen ? '📂' : '📁'}</span> {node.name}
@@ -161,6 +162,7 @@ const RunTreeItem: React.FC<{
               selectedDir={selectedDir}
               onSelect={onSelect}
               searchTerm={searchTerm}
+              parentOpen={isOpen}
             />
           ))}
         </ul>
