@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
+import { useWindowWidth } from '../hooks/useWindowWidth';
 import { Document, Page } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
@@ -19,6 +20,7 @@ interface CmssPlotViewerProps {
 
 const CmssPlotViewer: React.FC<CmssPlotViewerProps> = ({ files }) => {
   const parsed = useMemo(() => parseCmssFiles(files), [files]);
+  const windowWidth = useWindowWidth();
 
   const [category, setCategory] = useState('');
   const [group, setGroup] = useState('');
@@ -92,7 +94,7 @@ const CmssPlotViewer: React.FC<CmssPlotViewerProps> = ({ files }) => {
             >
               <Page
                 pageNumber={1}
-                width={Math.min(window.innerWidth - 420, 900)}
+                width={Math.min(windowWidth - 420, 900)}
                 renderTextLayer={false}
                 renderAnnotationLayer={false}
               />

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useWindowWidth } from '../hooks/useWindowWidth';
 import { Document, Page } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
@@ -30,21 +31,24 @@ function makePlotTitle(plot: PlotInfo): string {
   return `${plot.objectType} ${metric} — ${variable}`;
 }
 
-const SinglePdf: React.FC<{ url: string; label: string }> = ({ url, label }) => (
-  <div className="plot-detail-section">
-    <p className="plot-detail-section-label">{label}</p>
-    <div className="plot-detail-pdf">
-      <Document file={url} loading={<div style={{ padding: 12, color: '#888' }}>Loading…</div>}>
-        <Page
-          pageNumber={1}
-          width={Math.min(window.innerWidth - 420, 900)}
-          renderTextLayer={false}
-          renderAnnotationLayer={false}
-        />
-      </Document>
+const SinglePdf: React.FC<{ url: string; label: string }> = ({ url, label }) => {
+  const windowWidth = useWindowWidth();
+  return (
+    <div className="plot-detail-section">
+      <p className="plot-detail-section-label">{label}</p>
+      <div className="plot-detail-pdf">
+        <Document file={url} loading={<div style={{ padding: 12, color: '#888' }}>Loading…</div>}>
+          <Page
+            pageNumber={1}
+            width={Math.min(windowWidth - 420, 900)}
+            renderTextLayer={false}
+            renderAnnotationLayer={false}
+          />
+        </Document>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const PlotDetail: React.FC<PlotDetailProps> = ({ mainPlot, dataset, onBack }) => {
   const breakdownList = dataset.breakdowns.get(mainPlot.stem) ?? [];

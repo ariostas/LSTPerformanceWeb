@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { useWindowWidth } from '../hooks/useWindowWidth';
 import { Document, Page } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
@@ -9,6 +10,7 @@ interface FlatPdfViewerProps {
 }
 
 const FlatPdfViewer: React.FC<FlatPdfViewerProps> = ({ files }) => {
+  const windowWidth = useWindowWidth();
   const [selected, setSelected] = useState<DecompressedFile | null>(null);
   const [listWidth, setListWidth] = useState(280);
   const [isResizing, setIsResizing] = useState(false);
@@ -80,7 +82,7 @@ const FlatPdfViewer: React.FC<FlatPdfViewerProps> = ({ files }) => {
           >
             <Page
               pageNumber={1}
-              width={Math.min(window.innerWidth - 600, 900)}
+              width={Math.min(windowWidth - 600, 900)}
               renderTextLayer={false}
               renderAnnotationLayer={false}
             />
