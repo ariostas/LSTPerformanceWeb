@@ -23,52 +23,6 @@ function App() {
   const [isResizing, setIsResizing] = useState(false);
   const fetchAbortRef = useRef<AbortController | null>(null);
 
-  useEffect(() => {
-    async function initApp() {
-      try {
-        const allDirsResults = await Promise.all(REPOS.map(repo => fetchDirectories(repo.name)));
-        const allDirs = allDirsResults.flat();
-        setDirectories(allDirs);
-
-        const params = new URLSearchParams(window.location.search);
-        const runName = params.get('run');
-        if (runName) {
-          const matchedDir = allDirs.find(d => d.name === runName);
-          if (matchedDir) handleDirSelect(matchedDir);
-        }
-      } catch (err) {
-        setError('Failed to load directories from GitHub.');
-        console.error(err);
-      } finally {
-        setIsLoadingDirs(false);
-      }
-    }
-    initApp();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsResizing(true);
-  };
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isResizing) return;
-      setSidebarWidth(Math.max(150, Math.min(600, e.clientX)));
-    };
-    const handleMouseUp = () => setIsResizing(false);
-
-    if (isResizing) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-    }
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isResizing]);
-
   const handleDirSelect = async (dir: GitHubContent) => {
     fetchAbortRef.current?.abort();
     const controller = new AbortController();
@@ -97,10 +51,54 @@ function App() {
       setError(`Failed to process plots for ${dir.name}.`);
       console.error(err);
     } finally {
-      // Only reset state if this request is still the current one
       if (fetchAbortRef.current === controller) setIsExtracting(false);
     }
   };
+
+  useEffect(() => {
+    async function initApp() {
+      try {
+        const allDirsResults = await Promise.all(REPOS.map(repo => fetchDirectories(repo.name)));
+        const allDirs = allDirsResults.flat();
+        setDirectories(allDirs);
+
+        const params = new URLSearchParams(window.location.search);
+        const runName = params.get('run');
+        if (runName) {
+          const matchedDir = allDirs.find(d => d.name === runName);
+          if (matchedDir) handleDirSelect(matchedDir);
+        }
+      } catch (err) {
+        setError('Failed to load directories from GitHub.');
+        console.error(err);
+      } finally {
+        setIsLoadingDirs(false);
+      }
+    }
+    initApp();
+  }, []);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing) return;
+      setSidebarWidth(Math.max(150, Math.min(600, e.clientX)));
+    };
+    const handleMouseUp = () => setIsResizing(false);
+
+    if (isResizing) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing]);
 
   return (
     <div className={`app-container ${isResizing ? 'is-resizing' : ''}`}>

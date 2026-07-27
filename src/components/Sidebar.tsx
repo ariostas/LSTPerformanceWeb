@@ -61,6 +61,7 @@ const RunTreeItem: React.FC<{
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (searchTerm) setIsOpen(true);
   }, [searchTerm]);
 
@@ -73,6 +74,7 @@ const RunTreeItem: React.FC<{
   }, [node, selectedDir]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (hasSelectedChild) setIsOpen(true);
   }, [hasSelectedChild]);
 

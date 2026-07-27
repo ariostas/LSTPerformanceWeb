@@ -32,6 +32,7 @@ const PlotViewer: React.FC<PlotViewerProps> = ({ files, isExtracting }) => {
 
   // Initialise nav state from URL params when files change, falling back to defaults
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (!isMtvRun || parsedFiles.datasets.size === 0) {
       setDatasetName('');
       setObjectType('');
@@ -79,6 +80,7 @@ const PlotViewer: React.FC<PlotViewerProps> = ({ files, isExtracting }) => {
 
     const urlPlot = params.get('plot') ?? '';
     setDetailPlot(urlPlot ? (ds.plotsByKey.get(urlPlot) ?? null) : null);
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [parsedFiles]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sync nav state → URL
@@ -95,13 +97,15 @@ const PlotViewer: React.FC<PlotViewerProps> = ({ files, isExtracting }) => {
       url.searchParams.delete('sel');
       url.searchParams.delete('charge');
     }
-    detailPlot
-      ? url.searchParams.set('plot', detailPlot.stem)
-      : url.searchParams.delete('plot');
+    if (detailPlot) {
+      url.searchParams.set('plot', detailPlot.stem);
+    } else {
+      url.searchParams.delete('plot');
+    }
     url.searchParams.delete('cat');
     url.searchParams.delete('grp');
     window.history.replaceState({}, '', url);
-  }, [isMtvRun, datasetName, objectType, metric, selection, charge, detailPlot]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isMtvRun, datasetName, objectType, metric, selection, charge, detailPlot]);
 
   function resetNavForDataset(dsName: string) {
     const ds = parsedFiles.datasets.get(dsName);

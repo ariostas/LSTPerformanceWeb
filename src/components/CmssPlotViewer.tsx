@@ -28,6 +28,7 @@ const CmssPlotViewer: React.FC<CmssPlotViewerProps> = ({ files }) => {
 
   // Initialise from URL params when parsed data changes, falling back to defaults
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     const params = new URLSearchParams(window.location.search);
     const first = parsed.categories[0] ?? '';
     const urlCat = params.get('cat') ?? '';
@@ -47,6 +48,7 @@ const CmssPlotViewer: React.FC<CmssPlotViewerProps> = ({ files }) => {
     } else {
       setDetail(null);
     }
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [parsed]);
 
   // Sync nav state → URL
@@ -55,9 +57,11 @@ const CmssPlotViewer: React.FC<CmssPlotViewerProps> = ({ files }) => {
     const url = new URL(window.location.href);
     url.searchParams.set('cat', category);
     url.searchParams.set('grp', group);
-    detail
-      ? url.searchParams.set('plot', detail.stem)
-      : url.searchParams.delete('plot');
+    if (detail) {
+      url.searchParams.set('plot', detail.stem);
+    } else {
+      url.searchParams.delete('plot');
+    }
     url.searchParams.delete('ds');
     url.searchParams.delete('obj');
     url.searchParams.delete('metric');
